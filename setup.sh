@@ -15,7 +15,8 @@ sudo sh -c 'echo "extension=dio.so" > /etc/php5/cli/conf.d/20-dio.ini'
 sudo sh -c 'echo "extension=redis.so" > /etc/php5/apache2/conf.d/20-redis.ini'
 sudo sh -c 'echo "extension=redis.so" > /etc/php5/cli/conf.d/20-redis.ini'
 sudo nano /etc/apache2/apache2.conf
-sudo /etc/init.d/apache2 restart
+sudo ln -s ../mods-available/rewrite.load /etc/apache2/mods-enabled/rewrite.load
+sudo systemctl restart apache2
 sudo chown -R pi /var/www
 cd /var/www && git clone -b stable https://github.com/emoncms/emoncms.git
 mysql -u root -p <<EOF
