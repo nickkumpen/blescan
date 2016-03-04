@@ -23,6 +23,9 @@ import os
 import sys
 import struct
 import bluetooth._bluetooth as bluez
+import mysql.connector
+import time
+from datetime import date, datetime, timedelta
 
 LE_META_EVENT = 0x3e
 OGF_LE_CTL=0x08
@@ -106,16 +109,16 @@ def parse_events(sock, loop_count=100):
                     Adstring = packed_bdaddr_to_string(pkt[report_pkt_offset + 3:report_pkt_offset + 9])
                     Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -22: report_pkt_offset - 6])
                     #Adstring += ',' + "%i" % returnnumberpacket(pkt[report_pkt_offset -6: report_pkt_offset - 4])
-                    Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -6: report_pkt_offset - 4])
+                    #Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -6: report_pkt_offset - 4])
                     #Adstring += ',' + "%i" % returnnumberpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2])
-                    Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2])
-                    try:
+                    #Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2])
+                    #try:
                         #Adstring += ',' + "%i" % struct.unpack("b", pkt[report_pkt_offset -2:report_pkt_offset -1])
-                        Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -2:report_pkt_offset -1])
+                        #Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -2:report_pkt_offset -1])
                         #The last byte is always 00; we don't really need it
                         #Adstring += ',' + "%i" % struct.unpack("b", pkt[report_pkt_offset -1:report_pkt_offset])
                         #Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -1:report_pkt_offset])
-                    except: 1
+                    #except: 1
                     #Prevent duplicates in results
                     if Adstring not in myFullList: myFullList.append(Adstring)
     sock.setsockopt( bluez.SOL_HCI, bluez.HCI_FILTER, old_filter )
@@ -132,9 +135,23 @@ if __name__ == '__main__':
 
     hci_le_set_scan_parameters(sock)
     hci_enable_le_scan(sock)
-
     while True:
         returnedList = parse_events(sock, 10)
         print("----------")
         for beacon in returnedList:
-            print(beacon)
+           #connecting to MySQL using Connector/python
+                cnx = mysql.connector.connect(user='pxleai1q_1301770', password='BKfC}z@7ukVt', host='phpmyadmin.pxl-ea-ict.be', database='pxleai1q_1301770')
+                today = datetime.now().date()
+                tijd = datetime.now().time()
+           #inserting into table
+                cursor = cnx.cursor()
+                add_uuid = ("INSERT INTO tabel1" "(UUID, DEDATUM, DETIJD)" "VALUES (%s, %s, %s)")
+
+                data_uuid = (beacon, today, tijd,)
+                
+                cursor.execute(add_uuid, data_uuid)
+                cnx.commit()
+
+                cursor.close()
+                cnx.close()
+                print(beacon)
