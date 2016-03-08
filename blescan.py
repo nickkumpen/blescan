@@ -26,6 +26,8 @@ import bluetooth._bluetooth as bluez
 import mysql.connector
 import time
 from datetime import date, datetime, timedelta
+import string
+import httplib2
 
 LE_META_EVENT = 0x3e
 OGF_LE_CTL=0x08
@@ -38,13 +40,13 @@ EVT_LE_ADVERTISING_REPORT=0x02
 def getBLESocket(devID):
 	return bluez.hci_open_dev(devID)
 
-#def returnnumberpacket(pkt):
-#    myInteger = 0
-#    multiple = 256
-#    for i in range(len(pkt)):
-#        myInteger += struct.unpack("B",pkt[i:i+1])[0] * multiple
-#        multiple = 1
-#    return myInteger
+def returnnumberpacket(pkt):
+    myInteger = 0
+    multiple = 256
+    for i in range(len(pkt)):
+        myInteger += struct.unpack("B",pkt[i:i+1])[0] * multiple
+        multiple = 1
+    return myInteger
 
 def returnstringpacket(pkt):
     myString = "";
@@ -108,21 +110,20 @@ def parse_events(sock, loop_count=100):
                     # build the return string
                     Adstring = packed_bdaddr_to_string(pkt[report_pkt_offset + 3:report_pkt_offset + 9])
                     Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -22: report_pkt_offset - 6])
-                    #Adstring += ',' + "%i" % returnnumberpacket(pkt[report_pkt_offset -6: report_pkt_offset - 4])
-                    #Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -6: report_pkt_offset - 4])
-                    #Adstring += ',' + "%i" % returnnumberpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2])
-                    #Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2])
-                    #try:
-                        #Adstring += ',' + "%i" % struct.unpack("b", pkt[report_pkt_offset -2:report_pkt_offset -1])
-                        #Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -2:report_pkt_offset -1])
+                    Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -6: report_pkt_offset - 4])
+                    Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2])
+                    try:
+                        Adstring += ',' + "%i" % struct.unpack("b", pkt[report_pkt_offset -2:report_pkt_offset -1])
+                        Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -2:report_pkt_offset -1])
                         #The last byte is always 00; we don't really need it
-                        #Adstring += ',' + "%i" % struct.unpack("b", pkt[report_pkt_offset -1:report_pkt_offset])
-                        #Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -1:report_pkt_offset])
-                    #except: 1
+                        Adstring += ',' + "%i" % struct.unpack("b", pkt[report_pkt_offset -1:report_pkt_offset])
+                        Adstring += ',' + returnstringpacket(pkt[report_pkt_offset -1:report_pkt_offset])
+                    except: 1
                     #Prevent duplicates in results
                     if Adstring not in myFullList: myFullList.append(Adstring)
     sock.setsockopt( bluez.SOL_HCI, bluez.HCI_FILTER, old_filter )
     return myFullList
+
 
 if __name__ == '__main__':
     dev_id = 0
@@ -139,19 +140,39 @@ if __name__ == '__main__':
         returnedList = parse_events(sock, 10)
         print("----------")
         for beacon in returnedList:
+#           getalletje = len(returnedList)
+#           domain = "localhost"
+#           emoncmspath = "emoncms"
+#           apikey = "2afaacb1b9521d5d088ac7294524fb22"
+#           nodeid =  2
+#           conn = httplib2.Http(domain)
+#           url = "http://localhost/"+emoncmspath+"/input/post.json?"
+#           url += "node="+str(nodeid)+"&json={"+beacon+":"+strength+"}"
+#           url += "&apikey="+apikey
+#           print(url)
+#           (resp, content) = conn.request(url, "GET")
+#           print (content)   
            #connecting to MySQL using Connector/python
                 cnx = mysql.connector.connect(user='pxleai1q_1301770', password='BKfC}z@7ukVt', host='phpmyadmin.pxl-ea-ict.be', database='pxleai1q_1301770')
                 today = datetime.now().date()
                 tijd = datetime.now().time()
            #inserting into table
                 cursor = cnx.cursor()
-                add_uuid = ("INSERT INTO tabel1" "(UUID, DEDATUM, DETIJD)" "VALUES (%s, %s, %s)")
+                if '0613ff4c000c0e0' in beacon:
+                 a = beacon
+                 print(a)
+                 add_uuid = ("INSERT INTO tabel1" "(UUID, DEDATUM, DETIJD)" "VALUES (%s, %s, %s)")
 
-                data_uuid = (beacon, today, tijd,)
-                
-                cursor.execute(add_uuid, data_uuid)
-                cnx.commit()
+                 data_uuid = (a, today, tijd,)
+                 
+                 cursor.execute(add_uuid, data_uuid)
+                 cnx.commit()
 
                 cursor.close()
                 cnx.close()
-                print(beacon)
+
+
+                
+ 
+ 
+
