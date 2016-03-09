@@ -51,7 +51,7 @@ def extract (pkt):
     major = ("%02x " * 2) % struct.unpack ('B' * 2, pkt[34:36])
     minor = ("%02x " * 2) % struct.unpack ('B' * 2, pkt[36:38])
     tx = "%d" % (struct.unpack ('B', pkt[38:39])[0] - 256)
-    strength = "%d" % (struct.unpack ('B', pkt[39:40])[0] - 256)
+    strength =struct.unpack ('B', pkt[39:40])[0] - 256
 
     return raw, mac, uuid, major, minor, tx, strength
 
@@ -96,7 +96,18 @@ def main ():
             print ('> ', raw);
             print ('  ', uuid, 'M', major, 'm', minor)
             print ('  ', 'tx', tx, 's', strength)
-
+            #getalletje = len(returnedList)
+            domain = "localhost"
+            emoncmspath = "emoncms"
+            apikey = "2afaacb1b9521d5d088ac7294524fb22"
+            nodeid =  2
+            conn = httplib2.Http(domain)
+            url = "http://"+domain+"/"+emoncmspath+"/input/post.json?"
+            url += "node="+str(nodeid)+"&json={"+uuid+":"+str(-strength)+"}"
+            url += "&apikey="+apikey
+            #print(url)
+            (resp, content) = conn.request(url, "GET")
+            #print (content)   
 if __name__ == '__main__':
     dev_id = 0
     try:
@@ -111,6 +122,6 @@ if __name__ == '__main__':
 
     try:
         main ()
-    except:
+    finally:
         hci_disable_le_scan (sock)
         sock.close ()
