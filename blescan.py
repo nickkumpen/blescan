@@ -90,6 +90,7 @@ def parse_events(sock, loop_count=100):
     return results
 
 def main ():
+    seen={}
     while True:
         beacons = parse_events(sock, 10)
         for raw, mac, uuid, major, minor, tx, strength in beacons:
@@ -97,17 +98,31 @@ def main ():
             print ('  ', uuid, 'M', major, 'm', minor)
             print ('  ', 'tx', tx, 's', strength)
             #getalletje = len(returnedList)
-            domain = "localhost"
-            emoncmspath = "emoncms"
-            apikey = "2afaacb1b9521d5d088ac7294524fb22"
-            nodeid =  2
-            conn = httplib2.Http(domain)
-            url = "http://"+domain+"/"+emoncmspath+"/input/post.json?"
-            url += "node="+str(nodeid)+"&json={"+uuid+":"+str(-strength)+"}"
-            url += "&apikey="+apikey
-            #print(url)
-            (resp, content) = conn.request(url, "GET")
-            #print (content)   
+           # domain = "localhost"
+           # emoncmspath = "emoncms"
+           # apikey = "2afaacb1b9521d5d088ac7294524fb22"
+           # nodeid =  "crossroad_comm"
+           # conn = httplib2.Http(domain)
+           # url = "http://"+domain+"/"+emoncmspath+"/input/post.json?"
+           # url += "node="+str(nodeid)+"&json={"+uuid+":"+str(-strength)+"}"
+           # url += "&apikey="+apikey
+           # #print(url)
+           # (resp, content) = conn.request(url, "GET")
+           # print (content)
+            now = datetime.now()
+            if uuid in seen and (now - seen[uuid]).seconds<1: continue
+            seen[uuid]=now
+            cnx = mysql.connector.connect(user='pxleai1q_1301770', password='BKfC}z@7ukVt', host='phpmyadmin.pxl-ea-ict.be', database='pxleai1q_1301770')
+            cursor = cnx.cursor()
+            add_uuid = ("INSERT INTO camionet1" "(uuid, sterkte)" "VALUES (%s, %s)")
+
+            data_uuid = (uuid, strength)
+                  
+            cursor.execute(add_uuid, data_uuid)
+            cnx.commit()
+
+            cursor.close()
+            cnx.close()
 if __name__ == '__main__':
     dev_id = 0
     try:
