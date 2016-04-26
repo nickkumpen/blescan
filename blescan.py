@@ -23,6 +23,8 @@ import mysql.connector
 import time
 from datetime import date, datetime, timedelta
 import httplib2
+import json
+import urllib
 
 OGF_LE_CTL=0x08
 OCF_LE_SET_SCAN_ENABLE=0x000C
@@ -88,41 +90,46 @@ def parse_events(sock, loop_count=100):
 
     sock.setsockopt(bluez.SOL_HCI, bluez.HCI_FILTER, old_filter)
     return results
+interval = 10
 
 def main ():
     seen={}
+    lastposted = datetime.now()
     while True:
-        beacons = parse_events(sock, 10)
+        beacons = parse_events(sock, interval)
         for raw, mac, uuid, major, minor, tx, strength in beacons:
             print ('> ', raw);
             print ('  ', uuid, 'M', major, 'm', minor)
             print ('  ', 'tx', tx, 's', strength)
-            #getalletje = len(returnedList)
-           # domain = "localhost"
-           # emoncmspath = "emoncms"
-           # apikey = "2afaacb1b9521d5d088ac7294524fb22"
-           # nodeid =  "crossroad_comm"
-           # conn = httplib2.Http(domain)
-           # url = "http://"+domain+"/"+emoncmspath+"/input/post.json?"
-           # url += "node="+str(nodeid)+"&json={"+uuid+":"+str(-strength)+"}"
-           # url += "&apikey="+apikey
-           # #print(url)
-           # (resp, content) = conn.request(url, "GET")
-           # print (content)
+
             now = datetime.now()
             if uuid in seen and (now - seen[uuid]).seconds<1: continue
             seen[uuid]=now
-            cnx = mysql.connector.connect(user='pxleai1q_1301770', password='BKfC}z@7ukVt', host='phpmyadmin.pxl-ea-ict.be', database='pxleai1q_1301770')
-            cursor = cnx.cursor()
-            add_uuid = ("INSERT INTO camionet1" "(uuid, sterkte)" "VALUES (%s, %s)")
 
-            data_uuid = (uuid, strength)
-                  
-            cursor.execute(add_uuid, data_uuid)
-            cnx.commit()
+            if (now - lastposted).seconds >  interval:
+                password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+                
+                top_level_url = "http://11301770.pxl-ea-ict.be/web"
+                password_mgr.add_password(None, top_level_url, 'admin', 'admin')
 
-            cursor.close()
-            cnx.close()
+                handler = urllib.request.HTTPBasicAuthHandler(password_mgr)
+
+                opener = urllib.request.build_opener(handler)
+
+                #opener.open(a_url)
+                urllib.request.install_opener(opener)
+    
+                uuids = [k for k in seen if (now - seen[k]).seconds<interval]
+                beacon = { 'UUID': uuids, 'Warehouse':"EPE-595" }
+                uuid_dump = str.encode(json.dumps(beacon))
+                print (uuid_dump)
+
+
+                req = urllib.request.Request('http://11301770.pxl-ea-ict.be/web/inventory')
+                req.add_header('Content-Type', 'application/json')
+
+                response = urllib.request.urlopen(req,uuid_dump)
+                lastposted = now
 if __name__ == '__main__':
     dev_id = 0
     try:
