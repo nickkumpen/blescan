@@ -25,6 +25,7 @@ from datetime import date, datetime, timedelta
 import httplib2
 import json
 import urllib
+from urllib.error import URLError
 
 OGF_LE_CTL=0x08
 OCF_LE_SET_SCAN_ENABLE=0x000C
@@ -124,12 +125,15 @@ def main ():
                 uuid_dump = str.encode(json.dumps(beacon))
                 print (uuid_dump)
 
+                try: 
+                    req = urllib.request.Request('http://11301770.pxl-ea-ict.be/web/inventory')
+                    req.add_header('Content-Type', 'application/json')
 
-                req = urllib.request.Request('http://11301770.pxl-ea-ict.be/web/inventory')
-                req.add_header('Content-Type', 'application/json')
+                    response = urllib.request.urlopen(req,uuid_dump)
+                    lastposted = now
+                except URLError:
+                    pass 
 
-                response = urllib.request.urlopen(req,uuid_dump)
-                lastposted = now
 if __name__ == '__main__':
     dev_id = 0
     try:
