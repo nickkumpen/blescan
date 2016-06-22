@@ -97,7 +97,7 @@ def main ():
     seen={}
     lastposted = datetime.now()
     while True:
-        beacons = parse_events(sock, interval)
+        beacons = parse_events(sock, 10)
         for raw, mac, uuid, major, minor, tx, strength in beacons:
             print ('> ', raw);
             print ('  ', uuid, 'M', major, 'm', minor)
@@ -110,7 +110,7 @@ def main ():
             if (now - lastposted).seconds >  interval:
                 password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
                 
-                top_level_url = "http://11301770.pxl-ea-ict.be/web"
+                top_level_url = "192.168.1.60:8000"
                 password_mgr.add_password(None, top_level_url, 'admin', 'admin')
 
                 handler = urllib.request.HTTPBasicAuthHandler(password_mgr)
@@ -121,12 +121,12 @@ def main ():
                 urllib.request.install_opener(opener)
     
                 uuids = [k for k in seen if (now - seen[k]).seconds<interval]
-                beacon = { 'UUID': uuids, 'Warehouse':"EPE-595" }
+                beacon = { 'UUID': uuids, 'Warehouse':"1-DFG-915" }
                 uuid_dump = str.encode(json.dumps(beacon))
                 print (uuid_dump)
 
                 try: 
-                    req = urllib.request.Request('http://11301770.pxl-ea-ict.be/web/inventory')
+                    req = urllib.request.Request('192.168.1.60:8000/inventory')
                     req.add_header('Content-Type', 'application/json')
 
                     response = urllib.request.urlopen(req,uuid_dump)
